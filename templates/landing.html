@@ -5,57 +5,65 @@
 {% block content %}
 
 <section class="hero">
-    <div class="hero-inner">
-        <div class="hero-badge">Personal Finance Tracker</div>
-        <h1 class="hero-title">
-            Know where your<br>
-            <em>money goes</em>
-        </h1>
-        <p class="hero-subtitle">
-            Log expenses, understand your spending patterns,
-            and take control of your financial life —
-            one transaction at a time.
-        </p>
-        <div class="hero-actions">
-            <a href="{{ url_for('register') }}" class="btn-primary">Start tracking free</a>
-            <a href="{{ url_for('login') }}" class="btn-ghost">Sign in</a>
-        </div>
+    <span class="hero-badge">
+        <span class="badge-dot"></span>
+        Personal Finance Tracker
+    </span>
+    <h1 class="hero-title">
+        Track every rupee.<br>
+        <span class="hero-title-green">Know where it goes.</span>
+    </h1>
+    <p class="hero-subtitle">Spendly helps you log expenses, spot patterns, stay on budget — without the spreadsheet headache.</p>
+    <div class="hero-buttons">
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Get started free</a>
+        <a href="#" class="btn btn-primary" id="videoBtn">See how it works</a>
     </div>
-    <div class="hero-visual">
-        <div class="mock-card">
-            <div class="mock-card-header">
-                <span class="mock-label">March 2026</span>
-                <span class="mock-total">₹12,450</span>
+
+    <div class="hero-card">
+        <div class="card-metrics">
+            <div class="metric">
+                <span class="metric-label">This month</span>
+                <span class="metric-value">₹23,500</span>
             </div>
-            <div class="mock-bars">
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Bills</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar" style="width: 72%"></div>
-                    </div>
-                    <span class="mock-amt">₹4,500</span>
+            <div class="metric">
+                <span class="metric-label">Budget left</span>
+                <span class="metric-value">₹6,500</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Transactions</span>
+                <span class="metric-value">47</span>
+            </div>
+        </div>
+        <div class="card-categories">
+            <div class="category">
+                <div class="category-info">
+                    <span class="category-dot category-dot-green"></span>
+                    <span class="category-name">Food</span>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Food</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-2" style="width: 52%"></div>
-                    </div>
-                    <span class="mock-amt">₹3,200</span>
+                <div class="category-bar">
+                    <div class="category-fill category-fill-green" style="width: 70%"></div>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Health</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-3" style="width: 33%"></div>
-                    </div>
-                    <span class="mock-amt">₹2,050</span>
+                <span class="category-amount">₹8,200</span>
+            </div>
+            <div class="category">
+                <div class="category-info">
+                    <span class="category-dot category-dot-blue"></span>
+                    <span class="category-name">Travel</span>
                 </div>
-                <div class="mock-bar-row">
-                    <span class="mock-cat">Transport</span>
-                    <div class="mock-bar-track">
-                        <div class="mock-bar mock-bar-4" style="width: 28%"></div>
-                    </div>
-                    <span class="mock-amt">₹1,800</span>
+                <div class="category-bar">
+                    <div class="category-fill category-fill-blue" style="width: 47%"></div>
                 </div>
+                <span class="category-amount">₹5,500</span>
+            </div>
+            <div class="category">
+                <div class="category-info">
+                    <span class="category-dot category-dot-orange"></span>
+                    <span class="category-name">Bills</span>
+                </div>
+                <div class="category-bar">
+                    <div class="category-fill category-fill-orange" style="width: 83%"></div>
+                </div>
+                <span class="category-amount">₹9,800</span>
             </div>
         </div>
     </div>
@@ -81,12 +89,43 @@
     </div>
 </section>
 
-<section class="cta-section">
-    <div class="cta-inner">
-        <h2 class="cta-title">Ready to take control?</h2>
-        <p class="cta-body">Join thousands of people who track their expenses with Spendly.</p>
-        <a href="{{ url_for('register') }}" class="btn-primary">Create free account</a>
+<div id="videoModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" id="closeModal">&times;</button>
+        <div class="modal-video">
+            <iframe id="videoFrame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
     </div>
-</section>
+</div>
+
+<script>
+    const videoBtn = document.getElementById('videoBtn');
+    const modal = document.getElementById('videoModal');
+    const closeBtn = document.getElementById('closeModal');
+    const videoFrame = document.getElementById('videoFrame');
+
+    const videoUrl = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+
+    videoBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        videoFrame.src = videoUrl;
+        modal.classList.add('show');
+    });
+
+    closeBtn.addEventListener('click', function() {
+        closeModal();
+    });
+
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    function closeModal() {
+        modal.classList.remove('show');
+        videoFrame.src = '';
+    }
+</script>
 
 {% endblock %}
