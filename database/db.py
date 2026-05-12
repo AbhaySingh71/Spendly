@@ -1,5 +1,68 @@
-# Students will write this file in Step 1 — Database Setup
-# This file should contain:
-#   get_db()   — returns a SQLite connection with row_factory and foreign keys enabled
-#   init_db()  — creates all tables using CREATE TABLE IF NOT EXISTS
-#   seed_db()  — inserts sample data for development
+import sqlite3
+from werkzeug.security import generate_password_hash
+
+DATABASE_PATH = "spendly.db"
+
+
+def get_db():
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    return conn
+
+
+def init_db():
+    conn = get_db()
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL,
+            date TEXT NOT NULL,
+            description TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+    """)
+    conn.close()
+
+
+def seed_db():
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id FROM users LIMIT 1")
+    if cur.fetchone():
+        conn.close()
+        return
+
+    cur.execute(
+        "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+        ("Demo User", "demo@spendly.com", generate_password_hash("demo123"))
+    )
+    user_id = cur.lastrowid
+
+    expenses = [
+        (250, "Food", "2025-05-01", "Breakfast at Cafe"),
+        (45, "Transport", "2025-05-03", "Uber ride"),
+        (1200, "Bills", "2025-05-05", "Electricity bill"),
+        (500, "Health", "2025-05-07", "Pharmacy"),
+        (200, "Entertainment", "2025-05-09", "Movie tickets"),
+        (800, "Shopping", "2025-05-11", "Groceries"),
+        (150, "Food", "2025-05-10", "Lunch with friends"),
+        (60, "Transport", "2025-05-12", "Bus pass"),
+    ]
+    for amount, cat, date, desc in expenses:
+        cur.execute(
+            "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, cat, date, desc)
+        )
+    conn.commit()
+    conn.close()
