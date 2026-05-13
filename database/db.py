@@ -80,3 +80,12 @@ def create_user(name, email, password):
     conn.commit()
     conn.close()
     return user_id
+
+
+def get_user_by_email(email):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, email, password_hash FROM users WHERE email = ?", (email,))
+    user = cur.fetchone()
+    conn.close()
+    return user
