@@ -88,7 +88,7 @@ def login():
 
     session["user_id"] = user["id"]
     session["user_name"] = user["name"]
-    return redirect(url_for("landing"))
+    return redirect(url_for("profile"))
 
 
 @app.route("/terms")
@@ -113,7 +113,35 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user = {
+        "name": session.get("user_name", "Demo User"),
+        "email": "demo@spendly.com",
+        "member_since": "January 2025"
+    }
+    stats = {
+        "total_spent": 3205,
+        "transactions": 8,
+        "top_category": "Shopping"
+    }
+    transactions = [
+        {"date": "May 11", "description": "Groceries", "category": "Shopping", "amount": 800},
+        {"date": "May 10", "description": "Lunch with friends", "category": "Food", "amount": 150},
+        {"date": "May 09", "description": "Movie tickets", "category": "Entertainment", "amount": 200},
+        {"date": "May 07", "description": "Pharmacy", "category": "Health", "amount": 500},
+        {"date": "May 05", "description": "Electricity bill", "category": "Bills", "amount": 1200},
+    ]
+    categories = [
+        {"name": "Shopping", "amount": 800, "color": "green"},
+        {"name": "Bills", "amount": 1200, "color": "blue"},
+        {"name": "Food", "amount": 400, "color": "orange"},
+        {"name": "Health", "amount": 500, "color": "red"},
+        {"name": "Entertainment", "amount": 200, "color": "purple"},
+    ]
+
+    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories)
 
 
 @app.route("/expenses/add")
