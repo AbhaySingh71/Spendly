@@ -4,7 +4,7 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-for-spendly"
 
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id, get_user_expenses, get_user_stats
 
 with app.app_context():
     init_db()
@@ -116,32 +116,42 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    user = {
-        "name": session.get("user_name", "Demo User"),
-        "email": "demo@spendly.com",
-        "member_since": "January 2025"
-    }
-    stats = {
-        "total_spent": 3205,
-        "transactions": 8,
-        "top_category": "Shopping"
-    }
-    transactions = [
-        {"date": "May 11", "description": "Groceries", "category": "Shopping", "amount": 800},
-        {"date": "May 10", "description": "Lunch with friends", "category": "Food", "amount": 150},
-        {"date": "May 09", "description": "Movie tickets", "category": "Entertainment", "amount": 200},
-        {"date": "May 07", "description": "Pharmacy", "category": "Health", "amount": 500},
-        {"date": "May 05", "description": "Electricity bill", "category": "Bills", "amount": 1200},
-    ]
-    categories = [
-        {"name": "Shopping", "amount": 800, "color": "green"},
-        {"name": "Bills", "amount": 1200, "color": "blue"},
-        {"name": "Food", "amount": 400, "color": "orange"},
-        {"name": "Health", "amount": 500, "color": "red"},
-        {"name": "Entertainment", "amount": 200, "color": "purple"},
-    ]
+    user_id = session.get("user_id")
 
-    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories)
+    user = get_user_by_id(user_id)
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
+    stats = get_user_stats(user_id)
+    transactions = get_user_expenses(user_id)
+
+    category_totals = {}
+    for tx in transactions:
+        cat = tx["category"]
+        category_totals[cat] = round(category_totals.get(cat, 0) + tx["amount"], 2)
+
+    color_map = {
+        "Food": "orange",
+        "Transport": "blue",
+        "Bills": "purple",
+        "Health": "red",
+        "Shopping": "green",
+        "Entertainment": "cyan"
+    }
+
+    max_amount = max(category_totals.values()) if category_totals else 1
+    categories = []
+    for name, amount in sorted(category_totals.items(), key=lambda x: x[1], reverse=True):
+        bar_width = int(round((amount / max_amount) * 100)) if max_amount > 0 else 0
+        categories.append({
+            "name": name,
+            "amount": amount,
+            "color": color_map.get(name, "gray"),
+            "bar_width": bar_width
+        })
+
+    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories, max_category_amount=max_amount)
 
 
 @app.route("/expenses/add")
