@@ -89,3 +89,97 @@ def get_user_by_email(email):
     user = cur.fetchone()
     conn.close()
     return user
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,))
+    user = cur.fetchone()
+    conn.close()
+    if user:
+        return {
+            "id": user["id"],
+            "name": user["name"],
+            "email": user["email"],
+            "member_since": format_member_date(user["created_at"])
+        }
+    return None
+
+
+def format_member_date(date_str):
+    if not date_str:
+        return "Unknown"
+    try:
+        from datetime import datetime
+        dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        return dt.strftime("%B %Y")
+    except Exception:
+        return date_str
+
+
+def get_user_expenses(user_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT date, description, category, amount
+        FROM expenses
+        WHERE user_id = ?
+        ORDER BY date DESC
+        LIMIT 10
+    """, (user_id,))
+    rows = cur.fetchall()
+    conn.close()
+
+    expenses = []
+    for row in rows:
+        expenses.append({
+            "date": format_expense_date(row["date"]),
+            "description": row["description"] or "",
+            "category": row["category"],
+            "amount": row["amount"]
+        })
+    return expenses
+
+
+def format_expense_date(date_str):
+    if not date_str:
+        return ""
+    try:
+        from datetime import datetime
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return dt.strftime("%b %d")
+    except Exception:
+        return date_str
+
+
+def get_user_stats(user_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("SELECT SUM(amount) as total FROM expenses WHERE user_id = ?", (user_id,))
+    total_row = cur.fetchone()
+    total_spent = int(total_row["total"]) if total_row["total"] else 0
+
+    cur.execute("SELECT COUNT(*) as cnt FROM expenses WHERE user_id = ?", (user_id,))
+    count_row = cur.fetchone()
+    transactions = count_row["cnt"] if count_row["cnt"] else 0
+
+    cur.execute("""
+        SELECT category, SUM(amount) as total
+        FROM expenses
+        WHERE user_id = ?
+        GROUP BY category
+        ORDER BY total DESC
+        LIMIT 1
+    """, (user_id,))
+    top_row = cur.fetchone()
+    top_category = top_row["category"] if top_row else "None"
+
+    conn.close()
+
+    return {
+        "total_spent": total_spent,
+        "transactions": transactions,
+        "top_category": top_category
+    }

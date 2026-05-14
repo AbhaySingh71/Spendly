@@ -84,7 +84,7 @@
                                         {{ tx.category }}
                                     </span>
                                 </td>
-                                <td class="tx-amount">₹{{ tx.amount }}</td>
+                                <td class="tx-amount">₹{{ "%.2f"|format(tx.amount) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -109,10 +109,10 @@
                         </div>
                         <div class="category-bar-container">
                             <div class="category-bar">
-                                <div class="category-fill category-fill-{{ cat.color }}" style="width: {{ (cat.amount / 1200 * 100)|round }}%"></div>
+                                <div class="category-fill category-fill-{{ cat.color }}" style="width: {{ cat.bar_width }}%;"></div>
                             </div>
                         </div>
-                        <span class="category-amount">₹{{ cat.amount }}</span>
+                        <span class="category-amount">₹{{ "%.2f"|format(cat.amount) }}</span>
                     </div>
                     {% endfor %}
                 </div>

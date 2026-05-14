@@ -307,6 +307,9 @@
 .category-dot-red { background: var(--danger); }
 .category-dot-purple { background: #7c3aed; }
 
+.category-dot-cyan { background: #06b6d4; }
+.category-dot-gray { background: #6b7280; }
+
 .category-name {
     font-size: 0.875rem;
     font-weight: 500;
@@ -334,6 +337,8 @@
 .category-fill-orange { background: var(--accent-2); }
 .category-fill-red { background: var(--danger); }
 .category-fill-purple { background: #7c3aed; }
+.category-fill-cyan { background: #06b6d4; }
+.category-fill-gray { background: #6b7280; }
 
 .category-amount {
     font-size: 0.875rem;
