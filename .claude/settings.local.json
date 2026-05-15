@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Skill(create-spec)",
-      "Bash(timeout *)"
+      "Bash(timeout *)",
+      "Bash(python app.py)",
+      "Bash(black app.py)"
     ]
   }
 }

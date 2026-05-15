@@ -1,10 +1,29 @@
-from flask import Flask, render_template, flash, redirect, request, url_for, abort, session
+from flask import (
+    Flask,
+    render_template,
+    flash,
+    redirect,
+    request,
+    url_for,
+    abort,
+    session,
+)
 import sqlite3
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-for-spendly"
 
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id, get_user_expenses, get_user_stats
+from database.db import (
+    get_db,
+    init_db,
+    seed_db,
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+    get_user_expenses,
+    get_user_stats,
+)
 
 with app.app_context():
     init_db()
@@ -14,6 +33,7 @@ with app.app_context():
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
+
 
 @app.route("/")
 def landing():
@@ -82,6 +102,7 @@ def login():
         return render_template("login.html")
 
     from werkzeug.security import check_password_hash
+
     if not check_password_hash(user["password_hash"], password):
         flash("Invalid email or password", "error")
         return render_template("login.html")
@@ -105,10 +126,51 @@ def privacy():
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("landing"))
+
+
+def parse_date_filter(request_args):
+    """Parse and validate date filter parameters from request."""
+    date_from = request_args.get("date_from", "")
+    date_to = request_args.get("date_to", "")
+    active_filter = None
+    start_date = None
+    end_date = None
+
+    if date_from or date_to:
+        if date_from:
+            try:
+                start_date = datetime.strptime(date_from, "%Y-%m-%d").strftime(
+                    "%Y-%m-%d"
+                )
+            except ValueError:
+                date_from = ""
+
+        if date_to:
+            try:
+                end_date = datetime.strptime(date_to, "%Y-%m-%d").strftime("%Y-%m-%d")
+            except ValueError:
+                date_to = ""
+
+        if date_from and date_to:
+            if start_date > end_date:
+                flash("Start date must be before end date.", "error")
+                return "", "", None, None, None
+            else:
+                active_filter = "custom"
+        elif date_from:
+            start_date = date_from
+            end_date = datetime.now().strftime("%Y-%m-%d")
+            active_filter = "custom"
+        elif date_to:
+            end_date = date_to
+            active_filter = "custom"
+
+    return date_from, date_to, start_date, end_date, active_filter
 
 
 @app.route("/profile")
@@ -123,8 +185,12 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
-    stats = get_user_stats(user_id)
-    transactions = get_user_expenses(user_id)
+    date_from, date_to, start_date, end_date, active_filter = parse_date_filter(
+        request.args
+    )
+
+    stats = get_user_stats(user_id, start_date, end_date)
+    transactions = get_user_expenses(user_id, start_date, end_date)
 
     category_totals = {}
     for tx in transactions:
@@ -137,21 +203,52 @@ def profile():
         "Bills": "purple",
         "Health": "red",
         "Shopping": "green",
-        "Entertainment": "cyan"
+        "Entertainment": "cyan",
     }
 
     max_amount = max(category_totals.values()) if category_totals else 1
     categories = []
-    for name, amount in sorted(category_totals.items(), key=lambda x: x[1], reverse=True):
+    for name, amount in sorted(
+        category_totals.items(), key=lambda x: x[1], reverse=True
+    ):
         bar_width = int(round((amount / max_amount) * 100)) if max_amount > 0 else 0
-        categories.append({
-            "name": name,
-            "amount": amount,
-            "color": color_map.get(name, "gray"),
-            "bar_width": bar_width
-        })
+        categories.append(
+            {
+                "name": name,
+                "amount": amount,
+                "color": color_map.get(name, "gray"),
+                "bar_width": bar_width,
+            }
+        )
 
-    return render_template("profile.html", user=user, stats=stats, transactions=transactions, categories=categories, max_category_amount=max_amount)
+    today = date.today()
+    this_month_start = date(today.year, today.month, 1).strftime("%Y-%m-%d")
+    three_months_ago = (today - timedelta(days=90)).strftime("%Y-%m-%d")
+    six_months_ago = (today - timedelta(days=180)).strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
+
+    if date_from == this_month_start and date_to == today_str:
+        active_filter = "this_month"
+    elif date_from == three_months_ago and date_to == today_str:
+        active_filter = "last_3_months"
+    elif date_from == six_months_ago and date_to == today_str:
+        active_filter = "last_6_months"
+
+    return render_template(
+        "profile.html",
+        user=user,
+        stats=stats,
+        transactions=transactions,
+        categories=categories,
+        max_category_amount=max_amount,
+        date_from=date_from,
+        date_to=date_to,
+        active_filter=active_filter,
+        this_month_start=this_month_start,
+        three_months_ago=three_months_ago,
+        six_months_ago=six_months_ago,
+        today=today_str,
+    )
 
 
 @app.route("/expenses/add")
