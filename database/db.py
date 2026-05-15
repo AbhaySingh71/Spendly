@@ -45,7 +45,7 @@ def seed_db():
 
     cur.execute(
         "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-        ("Demo User", "demo@spendly.com", generate_password_hash("demo123"))
+        ("Demo User", "demo@spendly.com", generate_password_hash("demo123")),
     )
     user_id = cur.lastrowid
 
@@ -62,7 +62,7 @@ def seed_db():
     for amount, cat, date, desc in expenses:
         cur.execute(
             "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
-            (user_id, amount, cat, date, desc)
+            (user_id, amount, cat, date, desc),
         )
     conn.commit()
     conn.close()
@@ -74,7 +74,7 @@ def create_user(name, email, password):
     password_hash = generate_password_hash(password)
     cur.execute(
         "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-        (name, email, password_hash)
+        (name, email, password_hash),
     )
     user_id = cur.lastrowid
     conn.commit()
@@ -85,7 +85,9 @@ def create_user(name, email, password):
 def get_user_by_email(email):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id, name, email, password_hash FROM users WHERE email = ?", (email,))
+    cur.execute(
+        "SELECT id, name, email, password_hash FROM users WHERE email = ?", (email,)
+    )
     user = cur.fetchone()
     conn.close()
     return user
@@ -94,7 +96,9 @@ def get_user_by_email(email):
 def get_user_by_id(user_id):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,))
+    cur.execute(
+        "SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,)
+    )
     user = cur.fetchone()
     conn.close()
     if user:
@@ -102,7 +106,7 @@ def get_user_by_id(user_id):
             "id": user["id"],
             "name": user["name"],
             "email": user["email"],
-            "member_since": format_member_date(user["created_at"])
+            "member_since": format_member_date(user["created_at"]),
         }
     return None
 
@@ -112,33 +116,59 @@ def format_member_date(date_str):
         return "Unknown"
     try:
         from datetime import datetime
+
         dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
         return dt.strftime("%B %Y")
     except Exception:
         return date_str
 
 
-def get_user_expenses(user_id):
+def build_date_filter(start_date=None, end_date=None):
+    """Build date filter SQL clause and params list."""
+    params = []
+    date_filter = ""
+    if start_date and end_date:
+        date_filter = "AND date BETWEEN ? AND ?"
+        params = [start_date, end_date]
+    elif start_date:
+        date_filter = "AND date >= ?"
+        params = [start_date]
+    elif end_date:
+        date_filter = "AND date <= ?"
+        params = [end_date]
+    return date_filter, params
+
+
+def get_user_expenses(user_id, start_date=None, end_date=None):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("""
+
+    date_filter, date_params = build_date_filter(start_date, end_date)
+    params = [user_id] + date_params
+
+    cur.execute(
+        f"""
         SELECT date, description, category, amount
         FROM expenses
-        WHERE user_id = ?
+        WHERE user_id = ? {date_filter}
         ORDER BY date DESC
         LIMIT 10
-    """, (user_id,))
+    """,
+        params,
+    )
     rows = cur.fetchall()
     conn.close()
 
     expenses = []
     for row in rows:
-        expenses.append({
-            "date": format_expense_date(row["date"]),
-            "description": row["description"] or "",
-            "category": row["category"],
-            "amount": row["amount"]
-        })
+        expenses.append(
+            {
+                "date": format_expense_date(row["date"]),
+                "description": row["description"] or "",
+                "category": row["category"],
+                "amount": row["amount"],
+            }
+        )
     return expenses
 
 
@@ -147,32 +177,46 @@ def format_expense_date(date_str):
         return ""
     try:
         from datetime import datetime
+
         dt = datetime.strptime(date_str, "%Y-%m-%d")
         return dt.strftime("%b %d")
     except Exception:
         return date_str
 
 
-def get_user_stats(user_id):
+def get_user_stats(user_id, start_date=None, end_date=None):
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT SUM(amount) as total FROM expenses WHERE user_id = ?", (user_id,))
+    date_filter, date_params = build_date_filter(start_date, end_date)
+
+    params = [user_id] + date_params
+    cur.execute(
+        f"SELECT SUM(amount) as total FROM expenses WHERE user_id = ? {date_filter}",
+        params,
+    )
     total_row = cur.fetchone()
     total_spent = int(total_row["total"]) if total_row["total"] else 0
 
-    cur.execute("SELECT COUNT(*) as cnt FROM expenses WHERE user_id = ?", (user_id,))
+    params = [user_id] + date_params
+    cur.execute(
+        f"SELECT COUNT(*) as cnt FROM expenses WHERE user_id = ? {date_filter}", params
+    )
     count_row = cur.fetchone()
     transactions = count_row["cnt"] if count_row["cnt"] else 0
 
-    cur.execute("""
+    params = [user_id] + date_params
+    cur.execute(
+        f"""
         SELECT category, SUM(amount) as total
         FROM expenses
-        WHERE user_id = ?
+        WHERE user_id = ? {date_filter}
         GROUP BY category
         ORDER BY total DESC
         LIMIT 1
-    """, (user_id,))
+    """,
+        params,
+    )
     top_row = cur.fetchone()
     top_category = top_row["category"] if top_row else "None"
 
@@ -181,5 +225,5 @@ def get_user_stats(user_id):
     return {
         "total_spent": total_spent,
         "transactions": transactions,
-        "top_category": top_category
+        "top_category": top_category,
     }

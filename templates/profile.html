@@ -24,6 +24,25 @@
             </div>
         </div>
 
+        <!-- Date Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-presets">
+                <a href="{{ url_for('profile') }}" class="filter-preset {% if not active_filter %}active{% endif %}">All Time</a>
+                <a href="{{ url_for('profile', date_from=this_month_start, date_to=today) }}" class="filter-preset {% if active_filter == 'this_month' %}active{% endif %}">This Month</a>
+                <a href="{{ url_for('profile', date_from=three_months_ago, date_to=today) }}" class="filter-preset {% if active_filter == 'last_3_months' %}active{% endif %}">Last 3 Months</a>
+                <a href="{{ url_for('profile', date_from=six_months_ago, date_to=today) }}" class="filter-preset {% if active_filter == 'last_6_months' %}active{% endif %}">Last 6 Months</a>
+            </div>
+            <form method="GET" action="{{ url_for('profile') }}" class="filter-custom">
+                <input type="date" name="date_from" value="{{ date_from }}" class="filter-date-input">
+                <span class="filter-date-separator">to</span>
+                <input type="date" name="date_to" value="{{ date_to }}" class="filter-date-input">
+                <button type="submit" class="filter-apply-btn">Apply</button>
+                {% if date_from or date_to %}
+                <a href="{{ url_for('profile') }}" class="filter-clear-btn">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
         <!-- Summary Stats -->
         <div class="stats-row">
             <div class="stat-card">
