@@ -23,6 +23,7 @@ from database.db import (
     get_user_by_id,
     get_user_expenses,
     get_user_stats,
+    insert_expense,
 )
 
 with app.app_context():
@@ -251,9 +252,65 @@ def profile():
     )
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        today = date.today().strftime("%Y-%m-%d")
+        return render_template("add_expense.html", today=today)
+
+    if request.method != "POST":
+        abort(405)
+
+    amount_str = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    date_val = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+
+    errors = {}
+
+    if not amount_str:
+        errors["amount"] = "Amount is required"
+    else:
+        try:
+            amount = float(amount_str)
+            if amount <= 0:
+                errors["amount"] = "Amount must be greater than 0"
+        except ValueError:
+            errors["amount"] = "Please enter a valid number"
+
+    valid_categories = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+    if not category:
+        errors["category"] = "Category is required"
+    elif category not in valid_categories:
+        errors["category"] = "Invalid category"
+
+    if not date_val:
+        errors["date"] = "Date is required"
+    else:
+        try:
+            datetime.strptime(date_val, "%Y-%m-%d")
+        except ValueError:
+            errors["date"] = "Please enter a valid date (YYYY-MM-DD)"
+
+    if errors:
+        return render_template(
+            "add_expense.html",
+            today=today,
+            amount=amount_str,
+            category=category,
+            date=date_val,
+            description=description,
+            errors=errors,
+        )
+
+    user_id = session.get("user_id")
+    insert_expense(user_id, amount, category, date_val, description or None)
+
+    flash("Expense added successfully!", "success")
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/edit")
