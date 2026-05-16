@@ -227,3 +227,16 @@ def get_user_stats(user_id, start_date=None, end_date=None):
         "transactions": transactions,
         "top_category": top_category,
     }
+
+
+def insert_expense(user_id, amount, category, date, description=None):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+        (user_id, amount, category, date, description),
+    )
+    expense_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return expense_id
