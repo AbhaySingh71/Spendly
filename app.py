@@ -24,6 +24,8 @@ from database.db import (
     get_user_expenses,
     get_user_stats,
     insert_expense,
+    get_expense_by_id,
+    update_expense,
 )
 
 with app.app_context():
@@ -313,9 +315,67 @@ def add_expense():
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_id = session.get("user_id")
+    expense = get_expense_by_id(id, user_id)
+    if not expense:
+        abort(404)
+
+    if request.method == "GET":
+        return render_template("edit_expense.html", expense=expense)
+
+    if request.method != "POST":
+        abort(405)
+
+    amount_str = request.form.get("amount", "").strip()
+    category = request.form.get("category", "").strip()
+    date_val = request.form.get("date", "").strip()
+    description = request.form.get("description", "").strip()
+
+    errors = {}
+
+    if not amount_str:
+        errors["amount"] = "Amount is required"
+    else:
+        try:
+            amount = float(amount_str)
+            if amount <= 0:
+                errors["amount"] = "Amount must be greater than 0"
+        except ValueError:
+            errors["amount"] = "Please enter a valid number"
+
+    valid_categories = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
+    if not category:
+        errors["category"] = "Category is required"
+    elif category not in valid_categories:
+        errors["category"] = "Invalid category"
+
+    if not date_val:
+        errors["date"] = "Date is required"
+    else:
+        try:
+            datetime.strptime(date_val, "%Y-%m-%d")
+        except ValueError:
+            errors["date"] = "Please enter a valid date (YYYY-MM-DD)"
+
+    if errors:
+        expense = {
+            "id": id,
+            "amount": amount_str,
+            "category": category,
+            "date": date_val,
+            "description": description,
+        }
+        return render_template("edit_expense.html", expense=expense, errors=errors)
+
+    update_expense(id, user_id, amount, category, date_val, description or None)
+
+    flash("Expense updated successfully!", "success")
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/delete")
