@@ -148,7 +148,7 @@ def get_user_expenses(user_id, start_date=None, end_date=None):
 
     cur.execute(
         f"""
-        SELECT date, description, category, amount
+        SELECT id, date, description, category, amount
         FROM expenses
         WHERE user_id = ? {date_filter}
         ORDER BY date DESC
@@ -163,6 +163,7 @@ def get_user_expenses(user_id, start_date=None, end_date=None):
     for row in rows:
         expenses.append(
             {
+                "id": row["id"],
                 "date": format_expense_date(row["date"]),
                 "description": row["description"] or "",
                 "category": row["category"],
@@ -240,3 +241,43 @@ def insert_expense(user_id, amount, category, date, description=None):
     conn.commit()
     conn.close()
     return expense_id
+
+
+def get_expense_by_id(expense_id, user_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT id, user_id, amount, category, date, description
+        FROM expenses
+        WHERE id = ? AND user_id = ?
+        """,
+        (expense_id, user_id),
+    )
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return {
+            "id": row["id"],
+            "user_id": row["user_id"],
+            "amount": row["amount"],
+            "category": row["category"],
+            "date": row["date"],
+            "description": row["description"] or "",
+        }
+    return None
+
+
+def update_expense(expense_id, user_id, amount, category, date, description=None):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE expenses
+        SET amount = ?, category = ?, date = ?, description = ?
+        WHERE id = ? AND user_id = ?
+        """,
+        (amount, category, date, description, expense_id, user_id),
+    )
+    conn.commit()
+    conn.close()
