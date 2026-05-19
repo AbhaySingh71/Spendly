@@ -6,5 +6,8 @@
       "Bash(python app.py)",
       "Bash(black app.py)"
     ]
+  },
+  "enabledPlugins": {
+    "railway@railway-skills": true
   }
 }

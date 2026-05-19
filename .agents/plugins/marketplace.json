@@ -1,0 +1,20 @@
+{
+  "name": "railway",
+  "interface": {
+    "displayName": "Railway"
+  },
+  "plugins": [
+    {
+      "name": "railway-skills",
+      "source": {
+        "source": "local",
+        "path": "./plugins/railway-skills"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
