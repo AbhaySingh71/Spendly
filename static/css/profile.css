@@ -351,6 +351,32 @@
     font-variant-numeric: tabular-nums;
 }
 
+.tx-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tx-action-form {
+    margin: 0;
+}
+
+.btn-delete-expense {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-delete-expense:hover {
+    background: var(--danger-light);
+}
+
 /* ------------------------------------------------------------------ */
 /* Category Badges                                                     */
 /* ------------------------------------------------------------------ */

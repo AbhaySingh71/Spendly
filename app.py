@@ -26,6 +26,7 @@ from database.db import (
     insert_expense,
     get_expense_by_id,
     update_expense,
+    delete_expense as delete_expense_row,
 )
 
 with app.app_context():
@@ -378,9 +379,19 @@ def edit_expense(id):
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user_id = session.get("user_id")
+    expense = get_expense_by_id(id, user_id)
+    if not expense:
+        abort(404)
+
+    delete_expense_row(id, user_id)
+    flash("Expense deleted successfully!", "success")
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":
