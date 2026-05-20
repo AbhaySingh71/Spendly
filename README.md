@@ -6,7 +6,8 @@ The app side focuses on simple, reliable personal finance tracking. The Claude s
 Live app: https://spendly-flask-production.up.railway.app
 
 ## Project Screenshot
-![Spendly Screenshot](assests/sp1.png)
+| ![Screenshot 1](assets/sp4.png) | ![Screenshot 2](assets/sp23.png) |  
+|---------------------------------|---------------------------------|  
 
 ## What Spendly Does
 - User registration and login
