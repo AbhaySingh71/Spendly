@@ -1,0 +1,11 @@
+1. npm install -g @railway/cli
+
+2. railway login
+
+3. railway whoami
+
+4. /plugin marketplace add railwayapp/railway-skills
+
+5. /plugin install railway@railway-skills
+
+
